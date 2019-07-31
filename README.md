@@ -6,9 +6,6 @@ The following packages are required:
 
 - `raster`
 - `tmap`
+- `leaflet`
 - `shiny`
 - `flexdashboard`
-
-# Data Source
-
-- [https://water.usgs.gov/GIS/metadata/usgswrd/XML/gagesII_Sept2011.xml#stdorder](USGS Gage Network)

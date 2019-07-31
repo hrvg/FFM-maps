@@ -1,15 +1,23 @@
 ---
-title: "Uncertainty Maps for Predicted FFM Metrics"
-output:
-  html_document:
-    toc: true
-    toc_float: true
-    code_folding: hide
+title: "Uncertainty Maps for Predicted FFMetrics"
 resource_files:
-- data/
+- output/map.Rds
+- output/layer_names.Rds
+runtime: shiny
+output: flexdashboard::flex_dashboard
 ---
 
 ```{r libraries, warning = FALSE, message = FALSE, include = TRUE, echo = FALSE, results = "hide"}
 library("raster")
 library("tmap")
+library("leaflet")
+```
+
+```{r data_loading, warning = FALSE, message = FALSE, include = TRUE, echo = FALSE, results = "hide"}
+ma <- readRDS("output/map.Rds")
+layer_names <- readRDS("output/layer_names.Rds")
+```
+
+```{r maps}
+tmap_leaflet(ma) %>% hideGroup(layer_names[-1])
 ```
