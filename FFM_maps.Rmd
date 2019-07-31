@@ -1,0 +1,15 @@
+---
+title: "Uncertainty Maps for Predicted FFM Metrics"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    code_folding: hide
+resource_files:
+- data/
+---
+
+```{r libraries, warning = FALSE, message = FALSE, include = TRUE, echo = FALSE, results = "hide"}
+library("raster")
+library("tmap")
+```
