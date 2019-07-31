@@ -164,9 +164,3 @@ if (tools::file_ext(FileGages) == "shp"){
 } else {
 	ma <- make_maps(GagesUSGS_joined, start = 2)
 }
-
-# osmSFE <- tmaptools::read_osm(rrSFE)
-# ma1 <- tm_shape(osmSAC) + tm_rgb() + tm_shape(rrSAC, name = "NC uncertainty hotspots") + tm_raster(palette = "-inferno", n = ncol, contrast = c(.2, .8), alpha = .7, breaks = brk, legend.show = FALSE, title = "Intensity") + tm_scale_bar(position = c("right", "bottom")) + tm_compass(position = c("left", "bottom")) 
-# ma2 <- tm_shape(osmSFE) + tm_rgb() + tm_shape(rrSFE, name = "NC uncertainty hotspots") + tm_raster(palette = "-inferno", n = ncol, contrast = c(.2, .8), alpha = .7, breaks = brk, legend.show = TRUE, legend.format = list(format = "f", digits = 1), title = "Intensity") + tm_scale_bar(position = c("right", "top")) + tm_compass(position = c("right", "top")) + tm_layout(legend.position = c("left", "bottom")) + tm_basemap(server = "Esri.WorldTopoMap")
-# tm <- tmap_arrange(ma1, ma2)
-# tmap_save(ma1, dpi = 900, filename = "SACmap.pdf", units = "mm", width = 297, height = 210)
