@@ -55,7 +55,7 @@ read_GagesUSGS <- function(FileGages){
 		GagesUSGScsv <- GagesUSGScsv[, colnames(GagesUSGScsv) %in% keeps]
 		GagesUSGScsv <- na.omit(GagesUSGScsv)
 		lonlat <- cbind(GagesUSGScsv$LONGITUDE, GagesUSGScsv$LATITUDE)
-		crsRef <- CRS("+proj=aea +lat_1=29.5 +lat_2=45.5 +lat_0=23 +lon_0=-96 +x_0=0 +y_0=0 +datum=NAD83 +units=m +no_defs +ellps=GRS80 +towgs84=0,0,0")
+		crsRef <- CRS("+proj=longlat +datum=WGS84")
 		GagesUSGS <- SpatialPoints(lonlat, proj4string = crsRef)
 		GagesUSGS$STAID <- GagesUSGScsv$USGS_GAGE
 	}
@@ -87,7 +87,7 @@ make_spatial_join <- function(GagesUSGS, DirFFM, metricsNames, performanceMetric
 }
 
 get_GagesUSGS_joined <- function(DirFFM, FileGages){
-	if (file.exists(file.path("output/GagesUSGS_joined.shp"))){
+	if (file.exists(file.path("output/shp/GagesUSGS_joined.shp"))){
 		overwriteBool <- readline(prompt="Joined shapefile already exists. Do you want to overwrite it? [TRUE/FALSE]")
 	} else {
 		overwriteBool <- TRUE
@@ -100,30 +100,47 @@ get_GagesUSGS_joined <- function(DirFFM, FileGages){
 		GagesUSGS_joined <- make_spatial_join(GagesUSGS, DirFFM, metricsNames)
 		### write results  ###
 		if (!dir.exists("output")) dir.create("output")
-		shapefile(GagesUSGS_joined, file = file.path("output/GagesUSGS_joined.shp"), overwrite = TRUE)
+		if (!dir.exists("output/shp")) dir.create("output/shp")
+		shapefile(GagesUSGS_joined, file = file.path("output/shp/GagesUSGS_joined.shp"), overwrite = TRUE)
 	} else {
-		GagesUSGS_joined <- shapefile(file.path("output/GagesUSGS_joined.shp"))
+		GagesUSGS_joined <- shapefile(file.path("output/shp/GagesUSGS_joined.shp"))
 	}
 	return(GagesUSGS_joined)
 }
 
-make_maps <- function(GagesUSGS_joined, start = 15, end = 70){
+make_maps <- function(GagesUSGS_joined, start = 2){
 	if (file.exists(file.path("output/map.Rds"))){
 		overwriteBool <- readline(prompt="Output files already exists. Do you want to overwrite it? [TRUE/FALSE]")
 	} else {
 		overwriteBool <- TRUE
 	}
 	if (overwriteBool){
-		ma <- tm_shape(GagesUSGS_joined, name = names(GagesUSGS_joined)[start]) 
-		ma <- ma + tm_dots(col = names(GagesUSGS_joined)[start], title = names(GagesUSGS_joined)[start], palette = "-viridis") 
+		if (!dir.exists("output/pdfs")) dir.create("output/pdfs")
+		osm <- tmaptools::read_osm(tmaptools::bb(GagesUSGS_joined))
+		background <- tm_shape(osm) + tm_rgb() + tm_scale_bar(position = c("right", "bottom")) + tm_compass(position = c("left", "bottom")) + tm_layout(legend.position = c("right", "top"))
+		name <- names(GagesUSGS_joined)[start]
+		ma <- tm_shape(GagesUSGS_joined, name = name) 
+		ma <- ma + tm_dots(col = name, 
+				title = name, 
+				palette = ifelse(length(unique(GagesUSGS_joined[[name]])) < 3, "Set1", "-viridis"),
+				size = .25,
+				alpha = .8) 
+		maPdf <- background + ma
+		tmap_save(maPdf, dpi = 300, filename = file.path(paste0("output/pdfs/", name, ".pdf")), units = "mm", width = 297, height = 210)
+		end <- ncol(GagesUSGS_joined)
 		for (i in seq((start+1),end)){
 			name <- names(GagesUSGS_joined)[i]
-			ma <- ma + tm_shape(GagesUSGS_joined, name = name)
-			ma <- ma + tm_dots(col = name, 
+			maPdf <- tm_shape(GagesUSGS_joined, name = name)
+			maPdf <- maPdf + tm_dots(col = name, 
 				title = name, 
-				palette = ifelse(length(unique(GagesUSGS_joined[[name]])) < 3, "Set1", "-viridis"))
+				palette = ifelse(length(unique(GagesUSGS_joined[[name]])) < 3, "Set1", "-viridis"),
+				size = .25,
+				alpha = .8) 
+			ma <- ma + maPdf
+			maPdf <- background + maPdf
+			tmap_save(maPdf, dpi = 300, filename = file.path(paste0("output/pdfs/", name, ".pdf")), units = "mm", width = 297, height = 210)
 		}
-		ma <- ma + tm_basemap(server = "Esri.WorldTopoMap")
+		ma <- ma 
 		saveRDS(names(GagesUSGS_joined)[start:end], file.path("output/layer_names.Rds"))
 		saveRDS(ma, file.path("output/map.Rds"))
 	} else {
@@ -143,7 +160,13 @@ GagesUSGS_joined <- get_GagesUSGS_joined(DirFFM, FileGages)
 ############
 
 if (tools::file_ext(FileGages) == "shp"){
-	ma <- make_maps(GagesUSGS_joined)
+	ma <- make_maps(GagesUSGS_joined, start = 15)
 } else {
-	ma <- make_maps(GagesUSGS_joined, start = 2, end = 56)
+	ma <- make_maps(GagesUSGS_joined, start = 2)
 }
+
+# osmSFE <- tmaptools::read_osm(rrSFE)
+# ma1 <- tm_shape(osmSAC) + tm_rgb() + tm_shape(rrSAC, name = "NC uncertainty hotspots") + tm_raster(palette = "-inferno", n = ncol, contrast = c(.2, .8), alpha = .7, breaks = brk, legend.show = FALSE, title = "Intensity") + tm_scale_bar(position = c("right", "bottom")) + tm_compass(position = c("left", "bottom")) 
+# ma2 <- tm_shape(osmSFE) + tm_rgb() + tm_shape(rrSFE, name = "NC uncertainty hotspots") + tm_raster(palette = "-inferno", n = ncol, contrast = c(.2, .8), alpha = .7, breaks = brk, legend.show = TRUE, legend.format = list(format = "f", digits = 1), title = "Intensity") + tm_scale_bar(position = c("right", "top")) + tm_compass(position = c("right", "top")) + tm_layout(legend.position = c("left", "bottom")) + tm_basemap(server = "Esri.WorldTopoMap")
+# tm <- tmap_arrange(ma1, ma2)
+# tmap_save(ma1, dpi = 900, filename = "SACmap.pdf", units = "mm", width = 297, height = 210)
