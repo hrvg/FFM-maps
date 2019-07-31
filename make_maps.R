@@ -4,6 +4,7 @@
 
 library("raster")
 library("tmap")
+library("leaflet")
 
 ##################
 ### parameters ###
@@ -94,12 +95,15 @@ GagesUSGS_joined <- get_GagesUSGS_joined(DirFFM, FileGages)
 ############
 ### maps ###
 ############
-
-listMaps <- lapply(seq(16, 70), function(i){
+ma <- tm_shape(GagesUSGS_joined, name = names(GagesUSGS_joined)[15]) 
+ma <- ma + tm_dots(col = names(GagesUSGS_joined)[15], title = names(GagesUSGS_joined)[15], palette = "-viridis") 
+for (i in seq(16,70)){
 	name <- names(GagesUSGS_joined)[i]
-	print(name)
-	ma <- tm_shape(GagesUSGS_joined, name = name) 
-	ma <- ma + tm_dots(col = name, title = name, palette = "-viridis")
-	ma <- ma + tm_basemap(server = "Esri.WorldTopoMap")
-	return(ma)
-})
+	ma <- ma + tm_shape(GagesUSGS_joined, name = name)
+	ma <- ma + tm_dots(col = name, 
+		title = name, 
+		palette = ifelse(length(unique(GagesUSGS_joined[[name]])) < 3, "Set1", "-viridis"))
+}
+
+ma <- ma + tm_basemap(server = "Esri.WorldTopoMap")
+tmap_leaflet(ma) %>% hideGroup(names(GagesUSGS_joined)[16:70])
