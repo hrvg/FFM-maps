@@ -14,7 +14,7 @@ The following packages are required for visualizing the output with a shinyApp:
 - `shiny`
 - `flexdashboard`
 
-# Scritps
+# Scripts
 
 - `make_maps.R`: generates the output
 - `FFM_maps.Rmd`: is a lightweight shinyApp to visualize the results (not pushed online)
