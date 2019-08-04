@@ -5,6 +5,7 @@
 library("raster")
 library("tmap")
 library("leaflet")
+library("OpenStreetMap")
 
 ##################
 ### parameters ###
@@ -109,6 +110,15 @@ get_GagesUSGS_joined <- function(DirFFM, FileGages){
 }
 
 make_maps <- function(GagesUSGS_joined, start = 2){
+	get_colors <- function(name){
+		if (grepl("percent_IQR", name)){
+
+		} else if (grepl("medOE", name)){
+
+		} else if (grepl("pred_med_IQR", name)){
+
+		}
+	}
 	if (file.exists(file.path("output/map.Rds"))){
 		overwriteBool <- readline(prompt="Output files already exists. Do you want to overwrite it? [TRUE/FALSE]")
 	} else {
@@ -116,8 +126,11 @@ make_maps <- function(GagesUSGS_joined, start = 2){
 	}
 	if (overwriteBool){
 		if (!dir.exists("output/pdfs")) dir.create("output/pdfs")
-		osm <- tmaptools::read_osm(tmaptools::bb(GagesUSGS_joined))
-		background <- tm_shape(osm) + tm_rgb() + tm_scale_bar(position = c("right", "bottom")) + tm_compass(position = c("left", "bottom")) + tm_layout(legend.position = c("right", "top"))
+		boundingBox <- tmaptools::geocode_OSM("California")$bbox
+		upperLeft <- c(boundingBox$ymax, boundingBox$xmin)
+		lowerRight <- c(boundingBox$ymin, boundingBox$xmax)
+		osm <- raster(openmap(upperLeft, lowerRight, type = "http://tile.stamen.com/toner-background/{z}/{x}/{y}.png", zoom = 6))
+		background <- tm_shape(osm) + tm_rgb(alpha = 1/3) + tm_scale_bar(position = c("right", "bottom")) + tm_compass(position = c("left", "bottom")) + tm_layout(legend.position = c("right", "top"))
 		name <- names(GagesUSGS_joined)[start]
 		ma <- tm_shape(GagesUSGS_joined, name = name) 
 		ma <- ma + tm_dots(col = name, 
