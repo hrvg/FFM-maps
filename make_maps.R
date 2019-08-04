@@ -4,8 +4,9 @@
 
 library("raster")
 library("tmap")
-library("leaflet")
 library("OpenStreetMap")
+library("colorspace")
+library("leaflet")
 
 ##################
 ### parameters ###
@@ -88,36 +89,42 @@ make_spatial_join <- function(GagesUSGS, DirFFM, metricsNames, performanceMetric
 }
 
 get_GagesUSGS_joined <- function(DirFFM, FileGages){
-	if (file.exists(file.path("output/shp/GagesUSGS_joined.shp"))){
-		overwriteBool <- readline(prompt="Joined shapefile already exists. Do you want to overwrite it? [TRUE/FALSE]")
-	} else {
-		overwriteBool <- TRUE
-	}
-	if (overwriteBool){
-		### loading data ###
-		metricsNames <- get_metricsNames(DirFFM)
-		GagesUSGS <- read_GagesUSGS(FileGages)
-		### spatial join ###
-		GagesUSGS_joined <- make_spatial_join(GagesUSGS, DirFFM, metricsNames)
-		### write results  ###
-		if (!dir.exists("output")) dir.create("output")
-		if (!dir.exists("output/shp")) dir.create("output/shp")
-		shapefile(GagesUSGS_joined, file = file.path("output/shp/GagesUSGS_joined.shp"), overwrite = TRUE)
-	} else {
-		GagesUSGS_joined <- shapefile(file.path("output/shp/GagesUSGS_joined.shp"))
-	}
+	### loading data ###
+	metricsNames <- get_metricsNames(DirFFM)
+	GagesUSGS <- read_GagesUSGS(FileGages)
+	### spatial join ###
+	GagesUSGS_joined <- make_spatial_join(GagesUSGS, DirFFM, metricsNames)
+	### write results  ###
+	if (!dir.exists("output")) dir.create("output")
+	if (!dir.exists("output/shp")) dir.create("output/shp")
+	shapefile(GagesUSGS_joined, file = file.path("output/shp/GagesUSGS_joined.shp"), overwrite = TRUE)
 	return(GagesUSGS_joined)
 }
 
 make_maps <- function(GagesUSGS_joined, start = 2){
-	get_colors <- function(name){
+	get.aes <- function(name){
 		if (grepl("percent_IQR", name)){
-
-		} else if (grepl("medOE", name)){
-
+			brk <- c(0, 25, 35, 45, 55, 65, 75, 100)
+			pal1 <- head(sequential_hcl(7, "Blues 2"), 3)
+			pal2 <- sequential_hcl(2, "Greens 2")[1]
+			pal3 <- tail(sequential_hcl(7, "Reds 2", rev = TRUE), 3)
+			pal <- c(pal1, pal2, pal3)
+			labs <- NULL
 		} else if (grepl("pred_med_IQR", name)){
-
+			pal1 <- head(sequential_hcl(7, "Blues 2"), 1)
+			pal3 <- tail(sequential_hcl(7, "Reds 2", rev = TRUE), 1)
+			pal <- c(pal3, pal1)
+			brk <- NULL
+			labs <- c("False (0)", "True (1)")
+		} else if (grepl("medOE", name)){
+			brk <- c(-Inf, 0.5, 0.7, 0.9, 1.1, 1.4, 2, Inf)
+			pal1 <- head(sequential_hcl(7, "Blues 2"), 3)
+			pal2 <- sequential_hcl(2, "Greens 2")[1]
+			pal3 <- tail(sequential_hcl(7, "Reds 2", rev = TRUE), 3)
+			pal <- c(pal1, pal2, pal3)
+			labs <- NULL
 		}
+		return(list(pal = pal, brk = brk, labs = labs))
 	}
 	if (file.exists(file.path("output/map.Rds"))){
 		overwriteBool <- readline(prompt="Output files already exists. Do you want to overwrite it? [TRUE/FALSE]")
@@ -135,9 +142,11 @@ make_maps <- function(GagesUSGS_joined, start = 2){
 		ma <- tm_shape(GagesUSGS_joined, name = name) 
 		ma <- ma + tm_dots(col = name, 
 				title = name, 
-				palette = ifelse(length(unique(GagesUSGS_joined[[name]])) < 3, "Set1", "-viridis"),
-				size = .25,
-				alpha = .8) 
+				palette = get.aes(name)$pal,
+				breaks = get.aes(name)$brk, 
+				style = ifelse(is.null(get.aes(name)$brk), "cat", "fixed"),
+				labels = get.aes(name)$labs,
+				size = .25) 
 		maPdf <- background + ma
 		tmap_save(maPdf, dpi = 300, filename = file.path(paste0("output/pdfs/", name, ".pdf")), units = "mm", width = 297, height = 210)
 		end <- ncol(GagesUSGS_joined)
@@ -146,9 +155,11 @@ make_maps <- function(GagesUSGS_joined, start = 2){
 			maPdf <- tm_shape(GagesUSGS_joined, name = name)
 			maPdf <- maPdf + tm_dots(col = name, 
 				title = name, 
-				palette = ifelse(length(unique(GagesUSGS_joined[[name]])) < 3, "Set1", "-viridis"),
-				size = .25,
-				alpha = .8) 
+				palette = get.aes(name)$pal,
+				breaks = get.aes(name)$brk, 
+				style = ifelse(is.null(get.aes(name)$brk), "cat", "fixed"),
+				labels = get.aes(name)$labs,
+				size = .25)  
 			ma <- ma + maPdf
 			maPdf <- background + maPdf
 			tmap_save(maPdf, dpi = 300, filename = file.path(paste0("output/pdfs/", name, ".pdf")), units = "mm", width = 297, height = 210)

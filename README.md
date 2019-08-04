@@ -7,6 +7,7 @@ The following packages are required for generating the output:
 - `raster`
 - `tmap`
 - `OpenStreetMap`
+- `colorspace`
 
 The following packages are required for visualizing the output with a shinyApp:
 
