@@ -105,22 +105,22 @@ make_maps <- function(GagesUSGS_joined, start = 2){
 	get.aes <- function(name){
 		if (grepl("percent_IQR", name)){
 			brk <- c(0, 25, 35, 45, 55, 65, 75, 100)
-			pal1 <- head(sequential_hcl(7, "Blues 2"), 3)
-			pal2 <- sequential_hcl(2, "Greens 2")[1]
-			pal3 <- tail(sequential_hcl(7, "Reds 2", rev = TRUE), 3)
+			pal1 <- head(sequential_hcl(7, "Blues 3"), 3)
+			pal2 <- sequential_hcl(7, "Greens 3")[3]
+			pal3 <- tail(sequential_hcl(7, "Reds 3", rev = TRUE), 3)
 			pal <- c(pal1, pal2, pal3)
 			labs <- NULL
 		} else if (grepl("pred_med_IQR", name)){
-			pal1 <- head(sequential_hcl(7, "Blues 2"), 1)
-			pal3 <- tail(sequential_hcl(7, "Reds 2", rev = TRUE), 1)
+			pal1 <- head(sequential_hcl(7, "Blues 3"), 1)
+			pal3 <- tail(sequential_hcl(7, "Reds 3", rev = TRUE), 1)
 			pal <- c(pal3, pal1)
 			brk <- NULL
 			labs <- c("False (0)", "True (1)")
 		} else if (grepl("medOE", name)){
 			brk <- c(-Inf, 0.5, 0.7, 0.9, 1.1, 1.4, 2, Inf)
-			pal1 <- head(sequential_hcl(7, "Blues 2"), 3)
-			pal2 <- sequential_hcl(2, "Greens 2")[1]
-			pal3 <- tail(sequential_hcl(7, "Reds 2", rev = TRUE), 3)
+			pal1 <- head(sequential_hcl(7, "Blues 3"), 3)
+			pal2 <- sequential_hcl(7, "Greens 3")[3]
+			pal3 <- tail(sequential_hcl(7, "Reds 3", rev = TRUE), 3)
 			pal <- c(pal1, pal2, pal3)
 			labs <- NULL
 		}
@@ -140,13 +140,14 @@ make_maps <- function(GagesUSGS_joined, start = 2){
 		background <- tm_shape(osm) + tm_rgb(alpha = 1/3) + tm_scale_bar(position = c("right", "bottom")) + tm_compass(position = c("left", "bottom")) + tm_layout(legend.position = c("right", "top"))
 		name <- names(GagesUSGS_joined)[start]
 		ma <- tm_shape(GagesUSGS_joined, name = name) 
+		dot_size <- 0.5
 		ma <- ma + tm_dots(col = name, 
 				title = name, 
 				palette = get.aes(name)$pal,
 				breaks = get.aes(name)$brk, 
 				style = ifelse(is.null(get.aes(name)$brk), "cat", "fixed"),
 				labels = get.aes(name)$labs,
-				size = .25) 
+				size = dot_size) 
 		maPdf <- background + ma
 		tmap_save(maPdf, dpi = 300, filename = file.path(paste0("output/pdfs/", name, ".pdf")), units = "mm", width = 297, height = 210)
 		end <- ncol(GagesUSGS_joined)
@@ -159,7 +160,7 @@ make_maps <- function(GagesUSGS_joined, start = 2){
 				breaks = get.aes(name)$brk, 
 				style = ifelse(is.null(get.aes(name)$brk), "cat", "fixed"),
 				labels = get.aes(name)$labs,
-				size = .25)  
+				size = dot_size)  
 			ma <- ma + maPdf
 			maPdf <- background + maPdf
 			tmap_save(maPdf, dpi = 300, filename = file.path(paste0("output/pdfs/", name, ".pdf")), units = "mm", width = 297, height = 210)
